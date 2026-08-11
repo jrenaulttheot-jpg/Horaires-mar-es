@@ -233,7 +233,7 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow"><span class="dot"></span>Côte d'Émeraude · Ille-et-Vilaine</p>
+    <p class="eyebrow"><span class="dot"></span>Côte d'Émeraude · Ille-et-Vilaine · <span id="statusLabel">connexion…</span></p>
     <h1>Marées à <span class="accent">Saint-Briac</span></h1>
     <p class="subtitle" id="dateLabel">—</p>
   </header>
@@ -241,7 +241,6 @@
   <div class="now-card glass">
     <div class="state-row">
       <span class="state" id="stateLabel">—</span>
-      <span class="coeff">coefficient <b id="coeffToday">—</b></span>
     </div>
     <div class="next-tide" id="nextTideLabel">—
       <small id="nextTideSub">&nbsp;</small>
@@ -269,40 +268,118 @@
 </div>
 
 <script>
-// Données officielles (port de référence : Saint-Briac-sur-Mer, source SHOM) — août 2026
-const DATA = {
-  "2026-08-01":{sunrise:"6h42",sunset:"21h47",coeff:88,tides:[{t:"04:07",h:1.9,type:"BM"},{t:"09:37",h:11.1,type:"PM"},{t:"16:20",h:2.3,type:"BM"},{t:"21:52",h:11.5,type:"PM"}]},
-  "2026-08-02":{sunrise:"6h44",sunset:"21h45",coeff:88,tides:[{t:"04:40",h:1.9,type:"BM"},{t:"10:08",h:11.1,type:"PM"},{t:"16:53",h:2.3,type:"BM"},{t:"22:23",h:11.5,type:"PM"}]},
-  "2026-08-03":{sunrise:"6h45",sunset:"21h44",coeff:86,tides:[{t:"05:14",h:2.1,type:"BM"},{t:"10:40",h:10.9,type:"PM"},{t:"17:27",h:2.4,type:"BM"},{t:"22:56",h:11.1,type:"PM"}]},
-  "2026-08-04":{sunrise:"6h46",sunset:"21h42",coeff:80,tides:[{t:"05:49",h:2.4,type:"BM"},{t:"11:14",h:10.7,type:"PM"},{t:"18:04",h:2.8,type:"BM"},{t:"23:34",h:10.7,type:"PM"}]},
-  "2026-08-05":{sunrise:"6h48",sunset:"21h40",coeff:72,tides:[{t:"06:29",h:2.9,type:"BM"},{t:"11:54",h:10.3,type:"PM"},{t:"18:49",h:3.3,type:"BM"}]},
-  "2026-08-06":{sunrise:"6h49",sunset:"21h39",coeff:62,tides:[{t:"00:20",h:10.2,type:"PM"},{t:"07:18",h:3.5,type:"BM"},{t:"12:45",h:9.8,type:"PM"},{t:"19:49",h:3.8,type:"BM"}]},
-  "2026-08-07":{sunrise:"6h51",sunset:"21h37",coeff:53,tides:[{t:"01:21",h:9.6,type:"PM"},{t:"08:23",h:3.8,type:"BM"},{t:"13:56",h:9.4,type:"PM"},{t:"21:06",h:4.0,type:"BM"}]},
-  "2026-08-08":{sunrise:"6h52",sunset:"21h36",coeff:47,tides:[{t:"02:47",h:9.2,type:"PM"},{t:"09:43",h:4.2,type:"BM"},{t:"15:29",h:9.2,type:"PM"},{t:"22:32",h:4.0,type:"BM"}]},
-  "2026-08-09":{sunrise:"6h53",sunset:"21h34",coeff:49,tides:[{t:"04:20",h:9.2,type:"PM"},{t:"11:05",h:3.8,type:"BM"},{t:"16:55",h:9.8,type:"PM"},{t:"23:51",h:3.5,type:"BM"}]},
-  "2026-08-10":{sunrise:"6h55",sunset:"21h32",coeff:58,tides:[{t:"05:36",h:9.8,type:"PM"},{t:"12:16",h:3.3,type:"BM"},{t:"18:03",h:10.5,type:"PM"}]},
-  "2026-08-11":{sunrise:"6h56",sunset:"21h31",coeff:73,tides:[{t:"00:56",h:2.6,type:"BM"},{t:"06:38",h:10.5,type:"PM"},{t:"13:17",h:2.6,type:"BM"},{t:"18:59",h:11.5,type:"PM"}]},
-  "2026-08-12":{sunrise:"6h57",sunset:"21h29",coeff:90,tides:[{t:"01:51",h:1.7,type:"BM"},{t:"07:29",h:11.3,type:"PM"},{t:"14:08",h:1.9,type:"BM"},{t:"19:48",h:12.0,type:"PM"}]},
-  "2026-08-13":{sunrise:"6h59",sunset:"21h27",coeff:99,tides:[{t:"02:40",h:1.2,type:"BM"},{t:"08:15",h:11.8,type:"PM"},{t:"14:55",h:1.4,type:"BM"},{t:"20:32",h:12.6,type:"PM"}]},
-  "2026-08-14":{sunrise:"7h00",sunset:"21h25",coeff:108,tides:[{t:"03:24",h:0.9,type:"BM"},{t:"08:57",h:12.0,type:"PM"},{t:"15:38",h:1.2,type:"BM"},{t:"21:14",h:12.6,type:"PM"}]},
-  "2026-08-15":{sunrise:"7h02",sunset:"21h24",coeff:108,tides:[{t:"04:05",h:0.9,type:"BM"},{t:"09:37",h:12.0,type:"PM"},{t:"16:19",h:1.2,type:"BM"},{t:"21:52",h:12.4,type:"PM"}]},
-  "2026-08-16":{sunrise:"7h03",sunset:"21h22",coeff:103,tides:[{t:"04:45",h:1.2,type:"BM"},{t:"10:14",h:11.8,type:"PM"},{t:"16:58",h:1.6,type:"BM"},{t:"22:30",h:11.8,type:"PM"}]},
-  "2026-08-17":{sunrise:"7h04",sunset:"21h20",coeff:93,tides:[{t:"05:22",h:1.7,type:"BM"},{t:"10:50",h:11.3,type:"PM"},{t:"17:36",h:2.1,type:"BM"},{t:"23:05",h:11.3,type:"PM"}]},
-  "2026-08-18":{sunrise:"7h06",sunset:"21h18",coeff:81,tides:[{t:"05:59",h:2.4,type:"BM"},{t:"11:26",h:10.7,type:"PM"},{t:"18:14",h:2.9,type:"BM"},{t:"23:41",h:10.3,type:"PM"}]},
-  "2026-08-19":{sunrise:"7h07",sunset:"21h16",coeff:65,tides:[{t:"06:37",h:3.3,type:"BM"},{t:"12:04",h:10.0,type:"PM"},{t:"18:55",h:3.6,type:"BM"}]},
-  "2026-08-20":{sunrise:"7h09",sunset:"21h14",coeff:49,tides:[{t:"00:21",h:9.4,type:"PM"},{t:"07:19",h:4.2,type:"BM"},{t:"12:50",h:9.2,type:"PM"},{t:"19:44",h:4.5,type:"BM"}]},
-  "2026-08-21":{sunrise:"7h10",sunset:"21h13",coeff:35,tides:[{t:"01:13",h:8.7,type:"PM"},{t:"08:14",h:4.8,type:"BM"},{t:"13:55",h:8.7,type:"PM"},{t:"20:52",h:5.0,type:"BM"}]},
-  "2026-08-22":{sunrise:"7h11",sunset:"21h11",coeff:27,tides:[{t:"02:33",h:8.1,type:"PM"},{t:"09:29",h:5.2,type:"BM"},{t:"15:23",h:8.3,type:"PM"},{t:"22:15",h:5.0,type:"BM"}]},
-  "2026-08-23":{sunrise:"7h13",sunset:"21h09",coeff:31,tides:[{t:"04:09",h:8.1,type:"PM"},{t:"10:52",h:5.0,type:"BM"},{t:"16:45",h:8.7,type:"PM"},{t:"23:33",h:4.7,type:"BM"}]},
-  "2026-08-24":{sunrise:"7h14",sunset:"21h07",coeff:37,tides:[{t:"05:22",h:8.5,type:"PM"},{t:"12:00",h:4.5,type:"BM"},{t:"17:45",h:9.4,type:"PM"}]},
-  "2026-08-25":{sunrise:"7h16",sunset:"21h05",coeff:50,tides:[{t:"00:31",h:4.0,type:"BM"},{t:"06:14",h:9.2,type:"PM"},{t:"12:51",h:3.8,type:"BM"},{t:"18:31",h:10.0,type:"PM"}]},
-  "2026-08-26":{sunrise:"7h17",sunset:"21h03",coeff:62,tides:[{t:"01:15",h:3.3,type:"BM"},{t:"06:55",h:10.0,type:"PM"},{t:"13:33",h:3.3,type:"BM"},{t:"19:11",h:10.7,type:"PM"}]},
-  "2026-08-27":{sunrise:"7h18",sunset:"21h01",coeff:75,tides:[{t:"01:54",h:2.6,type:"BM"},{t:"07:32",h:10.5,type:"PM"},{t:"14:10",h:2.6,type:"BM"},{t:"19:47",h:11.3,type:"PM"}]},
-  "2026-08-28":{sunrise:"7h20",sunset:"20h59",coeff:85,tides:[{t:"02:30",h:2.1,type:"BM"},{t:"08:06",h:11.1,type:"PM"},{t:"14:45",h:2.1,type:"BM"},{t:"20:21",h:11.8,type:"PM"}]},
-  "2026-08-29":{sunrise:"7h21",sunset:"20h57",coeff:93,tides:[{t:"03:04",h:1.7,type:"BM"},{t:"08:39",h:11.5,type:"PM"},{t:"15:19",h:1.7,type:"BM"},{t:"20:53",h:12.0,type:"PM"}]},
-  "2026-08-30":{sunrise:"7h23",sunset:"20h55",coeff:98,tides:[{t:"03:38",h:1.4,type:"BM"},{t:"09:10",h:11.8,type:"PM"},{t:"15:53",h:1.7,type:"BM"},{t:"21:25",h:12.2,type:"PM"}]},
-  "2026-08-31":{sunrise:"7h24",sunset:"20h53",coeff:98,tides:[{t:"04:12",h:1.6,type:"BM"},{t:"09:41",h:11.8,type:"PM"},{t:"16:27",h:1.7,type:"BM"},{t:"21:58",h:12.0,type:"PM"}]}
+// ---------- Connexion en direct à l'API WorldTides ----------
+// Clé personnelle de l'utilisateur — stockée uniquement dans ce fichier local.
+// ⚠️ Comme ce fichier est ouvert directement dans un navigateur (pas de serveur),
+// cette clé est visible dans le code source. Ne partage pas ce fichier publiquement ;
+// si besoin, régénère la clé depuis ton compte worldtides.info.
+const WT_API_KEY = "D1125a3e-1fcf-4f60-a30b-437f9ead2f73";
+const LAT = 48.6211, LON = -2.1328; // Saint-Briac-sur-Mer
+const CACHE_KEY = "sbm_tide_cache_v1";
+const CACHE_MAX_AGE_MS = 5*24*60*60*1000; // on ne re-tape l'API que tous les ~5 jours
+
+function localDateKey(date){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Paris",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
+}
+function localTimeStr(date){
+  return new Intl.DateTimeFormat("fr-FR",{timeZone:"Europe/Paris",hour:"2-digit",minute:"2-digit",hour12:false}).format(date);
+}
+
+function extremesToData(extremes){
+  const out = {};
+  extremes.forEach(item=>{
+    const d = new Date(item.dt*1000);
+    const key = localDateKey(d);
+    const t = localTimeStr(d).replace("h",":").replace(/^(\d{2})(\d{2})$/,"$1:$2");
+    if(!out[key]) out[key] = {tides:[]};
+    out[key].tides.push({
+      t: localTimeStr(d),
+      h: Math.round(item.height*10)/10,
+      type: item.type === "High" ? "PM" : "BM"
+    });
+  });
+  Object.values(out).forEach(day=> day.tides.sort((a,b)=> minutesOf(a.t)-minutesOf(b.t)));
+  return out;
+}
+
+async function fetchLiveTides(){
+  const todayKey = localDateKey(new Date());
+  const url = `https://www.worldtides.info/api/v3?extremes&date=${todayKey}&days=10&lat=${LAT}&lon=${LON}&key=${WT_API_KEY}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if(!res.ok || json.status !== 200 || !json.extremes) throw new Error(json.error || "réponse API invalide");
+  return extremesToData(json.extremes);
+}
+
+async function loadTideData(){
+  const todayKey = localDateKey(new Date());
+  try{
+    const cachedRaw = localStorage.getItem(CACHE_KEY);
+    if(cachedRaw){
+      const cached = JSON.parse(cachedRaw);
+      const fresh = (Date.now()-cached.fetchedAt) < CACHE_MAX_AGE_MS;
+      const covers = cached.data && cached.data[todayKey];
+      if(fresh && covers) return {data:cached.data, source:"cache"};
+    }
+  }catch(e){ /* cache illisible, on retente le réseau */ }
+
+  const data = await fetchLiveTides();
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({fetchedAt:Date.now(), data})); }catch(e){}
+  return {data, source:"live"};
+}
+
+function setStatus(source){
+  const dot = document.querySelector(".eyebrow .dot");
+  const label = document.getElementById("statusLabel");
+  const map = {
+    live:   {color:"var(--cyan)",  text:"données en direct · WorldTides"},
+    cache:  {color:"var(--mist)",  text:"données en direct (cache local)"},
+    fallback:{color:"var(--coral)",text:"mode secours · données août 2026"},
+    loading:{color:"var(--mist)",  text:"connexion aux données…"}
+  };
+  const s = map[source] || map.loading;
+  dot.style.background = s.color;
+  dot.style.boxShadow = `0 0 10px ${s.color}`;
+  label.textContent = s.text;
+}
+
+// Données de secours (port de référence Saint-Briac-sur-Mer, source SHOM) — août 2026
+// Utilisées uniquement si l'API en direct est injoignable (pas de réseau, clé expirée, crédits épuisés...)
+const FALLBACK_DATA = {
+  "2026-08-01":{coeff:88,tides:[{t:"04:07",h:1.9,type:"BM"},{t:"09:37",h:11.1,type:"PM"},{t:"16:20",h:2.3,type:"BM"},{t:"21:52",h:11.5,type:"PM"}]},
+  "2026-08-02":{coeff:88,tides:[{t:"04:40",h:1.9,type:"BM"},{t:"10:08",h:11.1,type:"PM"},{t:"16:53",h:2.3,type:"BM"},{t:"22:23",h:11.5,type:"PM"}]},
+  "2026-08-03":{coeff:86,tides:[{t:"05:14",h:2.1,type:"BM"},{t:"10:40",h:10.9,type:"PM"},{t:"17:27",h:2.4,type:"BM"},{t:"22:56",h:11.1,type:"PM"}]},
+  "2026-08-04":{coeff:80,tides:[{t:"05:49",h:2.4,type:"BM"},{t:"11:14",h:10.7,type:"PM"},{t:"18:04",h:2.8,type:"BM"},{t:"23:34",h:10.7,type:"PM"}]},
+  "2026-08-05":{coeff:72,tides:[{t:"06:29",h:2.9,type:"BM"},{t:"11:54",h:10.3,type:"PM"},{t:"18:49",h:3.3,type:"BM"}]},
+  "2026-08-06":{coeff:62,tides:[{t:"00:20",h:10.2,type:"PM"},{t:"07:18",h:3.5,type:"BM"},{t:"12:45",h:9.8,type:"PM"},{t:"19:49",h:3.8,type:"BM"}]},
+  "2026-08-07":{coeff:53,tides:[{t:"01:21",h:9.6,type:"PM"},{t:"08:23",h:3.8,type:"BM"},{t:"13:56",h:9.4,type:"PM"},{t:"21:06",h:4.0,type:"BM"}]},
+  "2026-08-08":{coeff:47,tides:[{t:"02:47",h:9.2,type:"PM"},{t:"09:43",h:4.2,type:"BM"},{t:"15:29",h:9.2,type:"PM"},{t:"22:32",h:4.0,type:"BM"}]},
+  "2026-08-09":{coeff:49,tides:[{t:"04:20",h:9.2,type:"PM"},{t:"11:05",h:3.8,type:"BM"},{t:"16:55",h:9.8,type:"PM"},{t:"23:51",h:3.5,type:"BM"}]},
+  "2026-08-10":{coeff:58,tides:[{t:"05:36",h:9.8,type:"PM"},{t:"12:16",h:3.3,type:"BM"},{t:"18:03",h:10.5,type:"PM"}]},
+  "2026-08-11":{coeff:73,tides:[{t:"00:56",h:2.6,type:"BM"},{t:"06:38",h:10.5,type:"PM"},{t:"13:17",h:2.6,type:"BM"},{t:"18:59",h:11.5,type:"PM"}]},
+  "2026-08-12":{coeff:90,tides:[{t:"01:51",h:1.7,type:"BM"},{t:"07:29",h:11.3,type:"PM"},{t:"14:08",h:1.9,type:"BM"},{t:"19:48",h:12.0,type:"PM"}]},
+  "2026-08-13":{coeff:99,tides:[{t:"02:40",h:1.2,type:"BM"},{t:"08:15",h:11.8,type:"PM"},{t:"14:55",h:1.4,type:"BM"},{t:"20:32",h:12.6,type:"PM"}]},
+  "2026-08-14":{coeff:108,tides:[{t:"03:24",h:0.9,type:"BM"},{t:"08:57",h:12.0,type:"PM"},{t:"15:38",h:1.2,type:"BM"},{t:"21:14",h:12.6,type:"PM"}]},
+  "2026-08-15":{coeff:108,tides:[{t:"04:05",h:0.9,type:"BM"},{t:"09:37",h:12.0,type:"PM"},{t:"16:19",h:1.2,type:"BM"},{t:"21:52",h:12.4,type:"PM"}]},
+  "2026-08-16":{coeff:103,tides:[{t:"04:45",h:1.2,type:"BM"},{t:"10:14",h:11.8,type:"PM"},{t:"16:58",h:1.6,type:"BM"},{t:"22:30",h:11.8,type:"PM"}]},
+  "2026-08-17":{coeff:93,tides:[{t:"05:22",h:1.7,type:"BM"},{t:"10:50",h:11.3,type:"PM"},{t:"17:36",h:2.1,type:"BM"},{t:"23:05",h:11.3,type:"PM"}]},
+  "2026-08-18":{coeff:81,tides:[{t:"05:59",h:2.4,type:"BM"},{t:"11:26",h:10.7,type:"PM"},{t:"18:14",h:2.9,type:"BM"},{t:"23:41",h:10.3,type:"PM"}]},
+  "2026-08-19":{coeff:65,tides:[{t:"06:37",h:3.3,type:"BM"},{t:"12:04",h:10.0,type:"PM"},{t:"18:55",h:3.6,type:"BM"}]},
+  "2026-08-20":{coeff:49,tides:[{t:"00:21",h:9.4,type:"PM"},{t:"07:19",h:4.2,type:"BM"},{t:"12:50",h:9.2,type:"PM"},{t:"19:44",h:4.5,type:"BM"}]},
+  "2026-08-21":{coeff:35,tides:[{t:"01:13",h:8.7,type:"PM"},{t:"08:14",h:4.8,type:"BM"},{t:"13:55",h:8.7,type:"PM"},{t:"20:52",h:5.0,type:"BM"}]},
+  "2026-08-22":{coeff:27,tides:[{t:"02:33",h:8.1,type:"PM"},{t:"09:29",h:5.2,type:"BM"},{t:"15:23",h:8.3,type:"PM"},{t:"22:15",h:5.0,type:"BM"}]},
+  "2026-08-23":{coeff:31,tides:[{t:"04:09",h:8.1,type:"PM"},{t:"10:52",h:5.0,type:"BM"},{t:"16:45",h:8.7,type:"PM"},{t:"23:33",h:4.7,type:"BM"}]},
+  "2026-08-24":{coeff:37,tides:[{t:"05:22",h:8.5,type:"PM"},{t:"12:00",h:4.5,type:"BM"},{t:"17:45",h:9.4,type:"PM"}]},
+  "2026-08-25":{coeff:50,tides:[{t:"00:31",h:4.0,type:"BM"},{t:"06:14",h:9.2,type:"PM"},{t:"12:51",h:3.8,type:"BM"},{t:"18:31",h:10.0,type:"PM"}]},
+  "2026-08-26":{coeff:62,tides:[{t:"01:15",h:3.3,type:"BM"},{t:"06:55",h:10.0,type:"PM"},{t:"13:33",h:3.3,type:"BM"},{t:"19:11",h:10.7,type:"PM"}]},
+  "2026-08-27":{coeff:75,tides:[{t:"01:54",h:2.6,type:"BM"},{t:"07:32",h:10.5,type:"PM"},{t:"14:10",h:2.6,type:"BM"},{t:"19:47",h:11.3,type:"PM"}]},
+  "2026-08-28":{coeff:85,tides:[{t:"02:30",h:2.1,type:"BM"},{t:"08:06",h:11.1,type:"PM"},{t:"14:45",h:2.1,type:"BM"},{t:"20:21",h:11.8,type:"PM"}]},
+  "2026-08-29":{coeff:93,tides:[{t:"03:04",h:1.7,type:"BM"},{t:"08:39",h:11.5,type:"PM"},{t:"15:19",h:1.7,type:"BM"},{t:"20:53",h:12.0,type:"PM"}]},
+  "2026-08-30":{coeff:98,tides:[{t:"03:38",h:1.4,type:"BM"},{t:"09:10",h:11.8,type:"PM"},{t:"15:53",h:1.7,type:"BM"},{t:"21:25",h:12.2,type:"PM"}]},
+  "2026-08-31":{coeff:98,tides:[{t:"04:12",h:1.6,type:"BM"},{t:"09:41",h:11.8,type:"PM"},{t:"16:27",h:1.7,type:"BM"},{t:"21:58",h:12.0,type:"PM"}]}
 };
+
+let DATA = {};
 
 const DAY_NAMES = ["dim","lun","mar","mer","jeu","ven","sam"];
 const MONTH_NAMES = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -507,12 +584,11 @@ function render(){
   const [y,m,d] = key.split("-").map(Number);
   const dispDate = new Date(y, m-1, d);
   document.getElementById("dateLabel").textContent =
-    `${DAY_NAMES[dispDate.getDay()][0].toUpperCase()+DAY_NAMES[dispDate.getDay()].slice(1)} ${d} ${MONTH_NAMES[m-1]} ${y} · lever ${day.sunrise} / coucher ${day.sunset}`;
+    `${DAY_NAMES[dispDate.getDay()][0].toUpperCase()+DAY_NAMES[dispDate.getDay()].slice(1)} ${d} ${MONTH_NAMES[m-1]} ${y}`;
 
-  document.getElementById("coeffToday").textContent = day.coeff;
   const marnage = Math.max(...day.tides.map(t=>t.h)) - Math.min(...day.tides.map(t=>t.h));
   document.getElementById("marnageVal").textContent = marnage.toFixed(1)+" m";
-  document.getElementById("coeffBar").style.width = day.coeff+"%";
+  document.getElementById("coeffBar").style.width = Math.min(100, (marnage/12)*100)+"%";
 
   const isToday = key===keyFor(today);
   // le point reste toujours calé sur l'heure réelle actuelle, même en regardant un autre jour
@@ -554,7 +630,7 @@ function render(){
     } else {
       stateEl.textContent = "aperçu du jour";
       nextEl.innerHTML =
-        `${day.tides.length} marées ce jour-là <small>niveau à cette heure : ${nowH.toFixed(1)} m · coeff. ${day.coeff}</small>`;
+        `${day.tides.length} marées ce jour-là <small>niveau à cette heure : ${nowH.toFixed(1)} m · marnage ${marnage.toFixed(1)} m</small>`;
     }
   }
 
@@ -588,8 +664,21 @@ function render(){
   lastRenderedKey = key;
 }
 
-render();
-setInterval(()=>{ if(!selectedKey || selectedKey===keyFor(new Date())) render(); }, 60000);
+async function init(){
+  setStatus("loading");
+  try{
+    const {data, source} = await loadTideData();
+    DATA = data;
+    setStatus(source);
+  }catch(e){
+    DATA = FALLBACK_DATA;
+    setStatus("fallback");
+  }
+  render();
+  setInterval(()=>{ if(!selectedKey || selectedKey===keyFor(new Date())) render(); }, 60000);
+}
+
+init();
 </script>
 </body>
 </html>
