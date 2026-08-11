@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marées — Saint-Briac-sur-Mer</title>
+<style>
+  :root{
+    --deep:#031925;
+    --ink:#F4FAFC;
+    --mist:#AFD8E6;
+    --cyan:#3FD0E0;
+    --coral:#FF8A5C;
+    --glass-bg: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.28);
+    --glass-hi: rgba(255,255,255,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background: #031925;
+    color:var(--ink);
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Ambient animated background ---------- */
+  .bg{
+    position:fixed; inset:0; z-index:-2;
+    background:
+      radial-gradient(120% 90% at 15% -10%, #0B4A63 0%, transparent 55%),
+      radial-gradient(100% 80% at 100% 10%, #0E6E7C 0%, transparent 50%),
+      radial-gradient(140% 100% at 50% 120%, #012333 0%, #031925 60%);
+  }
+  .blob{
+    position:fixed; border-radius:50%; filter:blur(70px);
+    opacity:.55; z-index:-1; mix-blend-mode:screen;
+    animation: drift 26s ease-in-out infinite;
+  }
+  .blob1{width:60vw;height:60vw; background:radial-gradient(circle,#1C8FA8,transparent 70%); top:-20vw; left:-15vw; animation-duration:32s;}
+  .blob2{width:50vw;height:50vw; background:radial-gradient(circle,#2FD1C8,transparent 70%); bottom:-15vw; right:-10vw; animation-duration:24s; animation-delay:-6s;}
+  .blob3{width:35vw;height:35vw; background:radial-gradient(circle,#FF8A5C,transparent 72%); top:40%; left:60%; opacity:.18; animation-duration:38s; animation-delay:-12s;}
+  @keyframes drift{
+    0%,100%{ transform: translate(0,0) scale(1); }
+    33%{ transform: translate(4%,6%) scale(1.08); }
+    66%{ transform: translate(-5%,-3%) scale(0.95); }
+  }
+
+  /* film grain / noise sheen kept subtle via glass highlights only */
+
+  .wrap{max-width:520px;margin:0 auto;padding:30px 18px 50px;position:relative;}
+
+  header{
+    opacity:0; transform:translateY(14px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .eyebrow{
+    font-size:11px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--mist); margin:0 0 8px; font-weight:600;
+    display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--coral);
+    box-shadow:0 0 10px var(--coral); animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1; transform:scale(1);}50%{opacity:.4; transform:scale(.7);}}
+  h1{
+    font-size:38px; line-height:1.02; margin:0 0 6px; font-weight:700; letter-spacing:-.02em;
+  }
+  h1 .accent{
+    background:linear-gradient(100deg,var(--cyan),var(--coral) 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .subtitle{font-size:13.5px;color:var(--mist);margin:0;font-weight:500;}
+
+  /* ---------- Glass card base ---------- */
+  .glass{
+    position:relative;
+    background:var(--glass-bg);
+    border:1px solid var(--glass-border);
+    border-radius:28px;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      0 1px 1px rgba(255,255,255,.25) inset,
+      0 -18px 30px -20px rgba(255,255,255,.08) inset,
+      0 20px 45px -20px rgba(0,0,0,.55);
+    overflow:hidden;
+  }
+  .glass::before{ /* specular sweep */
+    content:"";
+    position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background:linear-gradient(115deg, transparent, rgba(255,255,255,.22) 45%, transparent 70%);
+    transform:skewX(-18deg);
+    animation: sweep 6.5s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes sweep{
+    0%{ left:-60%; }
+    35%{ left:130%; }
+    100%{ left:130%; }
+  }
+
+  .now-card{
+    margin-top:22px; padding:22px 20px 6px;
+    opacity:0; transform:translateY(18px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.1s;
+  }
+  .state-row{display:flex;justify-content:space-between;align-items:baseline;}
+  .state{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--coral); font-weight:700;
+  }
+  .coeff{font-size:12px;color:var(--mist);}
+  .coeff b{color:var(--ink);font-size:15px;font-weight:700;}
+  .next-tide{margin-top:12px; font-size:26px; font-weight:700; letter-spacing:-.01em;
+    transition:opacity .25s ease; }
+  .next-tide small{
+    display:block; font-size:12.5px; font-weight:500; color:var(--mist);
+    margin-top:3px;
+  }
+  .next-tide.swap, .state.swap{ opacity:.25; }
+
+  svg#curve{width:100%;height:150px;display:block;margin-top:16px;position:relative;z-index:1;overflow:visible;}
+  .curve-path{fill:none;stroke:var(--cyan);stroke-width:2.4;filter:drop-shadow(0 0 6px rgba(63,208,224,.6));}
+  .curve-fill{fill:url(#waterGrad);}
+  .now-dot-halo{fill:var(--coral);opacity:.16;filter:blur(1px);}
+  .now-dot{fill:var(--coral); filter:drop-shadow(0 0 8px var(--coral));
+    transform-box:fill-box; transform-origin:center;
+    transition:opacity .35s ease;}
+  .now-dot-ring{fill:none;stroke:var(--coral);stroke-width:1.4;
+    transform-box:fill-box; transform-origin:center;
+    transition:opacity .35s ease;}
+  .now-dot-ring.pulsing{ animation: ring 2.2s ease-out infinite; }
+  @keyframes ring{
+    0%{ r:5; opacity:.7; }
+    100%{ r:17; opacity:0; }
+  }
+  .dot-tag{
+    font-size:10.5px; font-weight:700; fill:var(--coral);
+    transition:opacity .35s ease;
+  }
+  .grid-line{stroke:rgba(255,255,255,.14);stroke-width:1;stroke-dasharray:2 4;}
+  .tick{font-size:9.5px; fill:var(--mist); font-weight:600;}
+
+  .section-label{
+    text-transform:uppercase; letter-spacing:.18em; font-size:11px;
+    color:var(--mist); font-weight:700; margin:32px 2px 12px;
+    display:flex; align-items:center; gap:10px;
+    opacity:0; animation: rise .6s ease forwards; animation-delay:.2s;
+  }
+  .section-label::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.16);}
+
+  .day-nav{
+    display:flex; gap:9px; overflow-x:auto; padding:2px 2px 10px;
+    -ms-overflow-style:none; scrollbar-width:none; scroll-behavior:smooth;
+    opacity:0; animation: rise .6s ease forwards; animation-delay:.25s;
+  }
+  .day-nav::-webkit-scrollbar{display:none;}
+  .day-btn{
+    flex:0 0 auto; background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.18);
+    color:var(--ink); border-radius:16px; padding:9px 13px;
+    font-size:13.5px; font-weight:600; cursor:pointer; text-align:center; line-height:1.25;
+    backdrop-filter: blur(10px);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), background .25s, border-color .25s;
+  }
+  .day-btn:active{transform:scale(.94);}
+  .day-btn span{display:block;font-size:9.5px;color:var(--mist);text-transform:uppercase;font-weight:600;letter-spacing:.05em;}
+  .day-btn.active{
+    background:linear-gradient(135deg, var(--cyan), #1c8fa8);
+    border-color:transparent; color:#03222b;
+    box-shadow:0 8px 20px -8px rgba(63,208,224,.7);
+    transform:translateY(-2px);
+  }
+  .day-btn.active span{color:#03222b;opacity:.75;}
+  .day-btn.today:not(.active){box-shadow:0 0 0 1.5px var(--coral) inset;}
+
+  .table-card{
+    margin-top:4px; padding:6px 18px;
+    opacity:0; transform:translateY(18px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.3s;
+  }
+  .tide-table{width:100%;border-collapse:collapse;}
+  .tide-table td{padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.09);font-size:14.5px;}
+  .tide-table tr:last-child td{border-bottom:none;}
+  .tide-table tr{
+    opacity:0; transform:translateY(10px);
+    animation: rowIn .5s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes rowIn{ to{ opacity:1; transform:translateY(0); } }
+  .table-card.leaving .tide-table tr{
+    animation: rowOut .18s ease forwards;
+  }
+  @keyframes rowOut{ to{ opacity:0; transform:translateY(-6px); } }
+  .tide-type{width:30px;text-align:center;font-size:17px;}
+  .tide-type.pm{color:var(--coral);}
+  .tide-type.bm{color:var(--cyan);}
+  .tide-time{font-weight:700;font-size:16.5px;width:74px;letter-spacing:-.01em;}
+  .tide-label{color:var(--mist);font-weight:500;}
+  .tide-height{color:var(--ink);text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+
+  .coeff-strip{
+    margin-top:8px; padding:16px 20px 20px;
+    display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--mist);
+    opacity:0; transform:translateY(18px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.35s;
+  }
+  .coeff-bar{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:5px;position:relative;overflow:hidden;}
+  .coeff-fill{
+    position:absolute; left:0; top:0; bottom:0; border-radius:5px;
+    background:linear-gradient(90deg,var(--cyan),var(--coral));
+    transition:width .5s cubic-bezier(.2,.8,.2,1);
+    box-shadow:0 0 12px rgba(63,208,224,.5);
+  }
+  .marnage-val{color:var(--ink);font-weight:700;}
+
+  @keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+
+  footer{
+    margin-top:36px; font-size:11.5px; color:var(--mist); opacity:.8; line-height:1.7;
+    padding:18px 20px;
+  }
+  footer a{color:var(--cyan);}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow"><span class="dot"></span>Côte d'Émeraude · Ille-et-Vilaine</p>
+    <h1>Marées à <span class="accent">Saint-Briac</span></h1>
+    <p class="subtitle" id="dateLabel">—</p>
+  </header>
+
+  <div class="now-card glass">
+    <div class="state-row">
+      <span class="state" id="stateLabel">—</span>
+      <span class="coeff">coefficient <b id="coeffToday">—</b></span>
+    </div>
+    <div class="next-tide" id="nextTideLabel">—
+      <small id="nextTideSub">&nbsp;</small>
+    </div>
+    <svg id="curve" viewBox="0 0 500 150" preserveAspectRatio="none"></svg>
+  </div>
+
+  <div class="section-label">Cette semaine</div>
+  <div class="day-nav" id="dayNav"></div>
+
+  <div class="table-card glass">
+    <table class="tide-table" id="tideTable"></table>
+  </div>
+
+  <div class="coeff-strip glass">
+    <span>marnage</span>
+    <div class="coeff-bar"><div class="coeff-fill" id="coeffBar"></div></div>
+    <span class="marnage-val" id="marnageVal">—</span>
+  </div>
+
+  <footer>
+    Données de prédiction — port de référence Saint-Briac-sur-Mer, août 2026 (source SHOM, via mareespeche.com). À titre indicatif : pour la navigation, la plongée ou toute sortie en mer, référez-vous aux tables de marées officielles du SHOM. Le marnage à Saint-Briac est parmi les plus forts d'Europe (jusqu'à 12 m) — restez vigilant sur l'estran, la mer y monte vite.
+  </footer>
+
+</div>
+
+<script>
+// Données officielles (port de référence : Saint-Briac-sur-Mer, source SHOM) — août 2026
+const DATA = {
+  "2026-08-01":{sunrise:"6h42",sunset:"21h47",coeff:88,tides:[{t:"04:07",h:1.9,type:"BM"},{t:"09:37",h:11.1,type:"PM"},{t:"16:20",h:2.3,type:"BM"},{t:"21:52",h:11.5,type:"PM"}]},
+  "2026-08-02":{sunrise:"6h44",sunset:"21h45",coeff:88,tides:[{t:"04:40",h:1.9,type:"BM"},{t:"10:08",h:11.1,type:"PM"},{t:"16:53",h:2.3,type:"BM"},{t:"22:23",h:11.5,type:"PM"}]},
+  "2026-08-03":{sunrise:"6h45",sunset:"21h44",coeff:86,tides:[{t:"05:14",h:2.1,type:"BM"},{t:"10:40",h:10.9,type:"PM"},{t:"17:27",h:2.4,type:"BM"},{t:"22:56",h:11.1,type:"PM"}]},
+  "2026-08-04":{sunrise:"6h46",sunset:"21h42",coeff:80,tides:[{t:"05:49",h:2.4,type:"BM"},{t:"11:14",h:10.7,type:"PM"},{t:"18:04",h:2.8,type:"BM"},{t:"23:34",h:10.7,type:"PM"}]},
+  "2026-08-05":{sunrise:"6h48",sunset:"21h40",coeff:72,tides:[{t:"06:29",h:2.9,type:"BM"},{t:"11:54",h:10.3,type:"PM"},{t:"18:49",h:3.3,type:"BM"}]},
+  "2026-08-06":{sunrise:"6h49",sunset:"21h39",coeff:62,tides:[{t:"00:20",h:10.2,type:"PM"},{t:"07:18",h:3.5,type:"BM"},{t:"12:45",h:9.8,type:"PM"},{t:"19:49",h:3.8,type:"BM"}]},
+  "2026-08-07":{sunrise:"6h51",sunset:"21h37",coeff:53,tides:[{t:"01:21",h:9.6,type:"PM"},{t:"08:23",h:3.8,type:"BM"},{t:"13:56",h:9.4,type:"PM"},{t:"21:06",h:4.0,type:"BM"}]},
+  "2026-08-08":{sunrise:"6h52",sunset:"21h36",coeff:47,tides:[{t:"02:47",h:9.2,type:"PM"},{t:"09:43",h:4.2,type:"BM"},{t:"15:29",h:9.2,type:"PM"},{t:"22:32",h:4.0,type:"BM"}]},
+  "2026-08-09":{sunrise:"6h53",sunset:"21h34",coeff:49,tides:[{t:"04:20",h:9.2,type:"PM"},{t:"11:05",h:3.8,type:"BM"},{t:"16:55",h:9.8,type:"PM"},{t:"23:51",h:3.5,type:"BM"}]},
+  "2026-08-10":{sunrise:"6h55",sunset:"21h32",coeff:58,tides:[{t:"05:36",h:9.8,type:"PM"},{t:"12:16",h:3.3,type:"BM"},{t:"18:03",h:10.5,type:"PM"}]},
+  "2026-08-11":{sunrise:"6h56",sunset:"21h31",coeff:73,tides:[{t:"00:56",h:2.6,type:"BM"},{t:"06:38",h:10.5,type:"PM"},{t:"13:17",h:2.6,type:"BM"},{t:"18:59",h:11.5,type:"PM"}]},
+  "2026-08-12":{sunrise:"6h57",sunset:"21h29",coeff:90,tides:[{t:"01:51",h:1.7,type:"BM"},{t:"07:29",h:11.3,type:"PM"},{t:"14:08",h:1.9,type:"BM"},{t:"19:48",h:12.0,type:"PM"}]},
+  "2026-08-13":{sunrise:"6h59",sunset:"21h27",coeff:99,tides:[{t:"02:40",h:1.2,type:"BM"},{t:"08:15",h:11.8,type:"PM"},{t:"14:55",h:1.4,type:"BM"},{t:"20:32",h:12.6,type:"PM"}]},
+  "2026-08-14":{sunrise:"7h00",sunset:"21h25",coeff:108,tides:[{t:"03:24",h:0.9,type:"BM"},{t:"08:57",h:12.0,type:"PM"},{t:"15:38",h:1.2,type:"BM"},{t:"21:14",h:12.6,type:"PM"}]},
+  "2026-08-15":{sunrise:"7h02",sunset:"21h24",coeff:108,tides:[{t:"04:05",h:0.9,type:"BM"},{t:"09:37",h:12.0,type:"PM"},{t:"16:19",h:1.2,type:"BM"},{t:"21:52",h:12.4,type:"PM"}]},
+  "2026-08-16":{sunrise:"7h03",sunset:"21h22",coeff:103,tides:[{t:"04:45",h:1.2,type:"BM"},{t:"10:14",h:11.8,type:"PM"},{t:"16:58",h:1.6,type:"BM"},{t:"22:30",h:11.8,type:"PM"}]},
+  "2026-08-17":{sunrise:"7h04",sunset:"21h20",coeff:93,tides:[{t:"05:22",h:1.7,type:"BM"},{t:"10:50",h:11.3,type:"PM"},{t:"17:36",h:2.1,type:"BM"},{t:"23:05",h:11.3,type:"PM"}]},
+  "2026-08-18":{sunrise:"7h06",sunset:"21h18",coeff:81,tides:[{t:"05:59",h:2.4,type:"BM"},{t:"11:26",h:10.7,type:"PM"},{t:"18:14",h:2.9,type:"BM"},{t:"23:41",h:10.3,type:"PM"}]},
+  "2026-08-19":{sunrise:"7h07",sunset:"21h16",coeff:65,tides:[{t:"06:37",h:3.3,type:"BM"},{t:"12:04",h:10.0,type:"PM"},{t:"18:55",h:3.6,type:"BM"}]},
+  "2026-08-20":{sunrise:"7h09",sunset:"21h14",coeff:49,tides:[{t:"00:21",h:9.4,type:"PM"},{t:"07:19",h:4.2,type:"BM"},{t:"12:50",h:9.2,type:"PM"},{t:"19:44",h:4.5,type:"BM"}]},
+  "2026-08-21":{sunrise:"7h10",sunset:"21h13",coeff:35,tides:[{t:"01:13",h:8.7,type:"PM"},{t:"08:14",h:4.8,type:"BM"},{t:"13:55",h:8.7,type:"PM"},{t:"20:52",h:5.0,type:"BM"}]},
+  "2026-08-22":{sunrise:"7h11",sunset:"21h11",coeff:27,tides:[{t:"02:33",h:8.1,type:"PM"},{t:"09:29",h:5.2,type:"BM"},{t:"15:23",h:8.3,type:"PM"},{t:"22:15",h:5.0,type:"BM"}]},
+  "2026-08-23":{sunrise:"7h13",sunset:"21h09",coeff:31,tides:[{t:"04:09",h:8.1,type:"PM"},{t:"10:52",h:5.0,type:"BM"},{t:"16:45",h:8.7,type:"PM"},{t:"23:33",h:4.7,type:"BM"}]},
+  "2026-08-24":{sunrise:"7h14",sunset:"21h07",coeff:37,tides:[{t:"05:22",h:8.5,type:"PM"},{t:"12:00",h:4.5,type:"BM"},{t:"17:45",h:9.4,type:"PM"}]},
+  "2026-08-25":{sunrise:"7h16",sunset:"21h05",coeff:50,tides:[{t:"00:31",h:4.0,type:"BM"},{t:"06:14",h:9.2,type:"PM"},{t:"12:51",h:3.8,type:"BM"},{t:"18:31",h:10.0,type:"PM"}]},
+  "2026-08-26":{sunrise:"7h17",sunset:"21h03",coeff:62,tides:[{t:"01:15",h:3.3,type:"BM"},{t:"06:55",h:10.0,type:"PM"},{t:"13:33",h:3.3,type:"BM"},{t:"19:11",h:10.7,type:"PM"}]},
+  "2026-08-27":{sunrise:"7h18",sunset:"21h01",coeff:75,tides:[{t:"01:54",h:2.6,type:"BM"},{t:"07:32",h:10.5,type:"PM"},{t:"14:10",h:2.6,type:"BM"},{t:"19:47",h:11.3,type:"PM"}]},
+  "2026-08-28":{sunrise:"7h20",sunset:"20h59",coeff:85,tides:[{t:"02:30",h:2.1,type:"BM"},{t:"08:06",h:11.1,type:"PM"},{t:"14:45",h:2.1,type:"BM"},{t:"20:21",h:11.8,type:"PM"}]},
+  "2026-08-29":{sunrise:"7h21",sunset:"20h57",coeff:93,tides:[{t:"03:04",h:1.7,type:"BM"},{t:"08:39",h:11.5,type:"PM"},{t:"15:19",h:1.7,type:"BM"},{t:"20:53",h:12.0,type:"PM"}]},
+  "2026-08-30":{sunrise:"7h23",sunset:"20h55",coeff:98,tides:[{t:"03:38",h:1.4,type:"BM"},{t:"09:10",h:11.8,type:"PM"},{t:"15:53",h:1.7,type:"BM"},{t:"21:25",h:12.2,type:"PM"}]},
+  "2026-08-31":{sunrise:"7h24",sunset:"20h53",coeff:98,tides:[{t:"04:12",h:1.6,type:"BM"},{t:"09:41",h:11.8,type:"PM"},{t:"16:27",h:1.7,type:"BM"},{t:"21:58",h:12.0,type:"PM"}]}
+};
+
+const DAY_NAMES = ["dim","lun","mar","mer","jeu","ven","sam"];
+const MONTH_NAMES = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+function pad(n){return n<10?"0"+n:""+n;}
+function keyFor(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function minutesOf(t){const [h,m]=t.split(":").map(Number);return h*60+m;}
+
+let selectedKey = null;
+
+function buildDayNav(centerDate){
+  const nav = document.getElementById("dayNav");
+  if(nav.dataset.built === "1"){
+    // juste mettre à jour l'état actif, la liste ne bouge plus
+    nav.querySelectorAll(".day-btn").forEach(btn=>{
+      const isActive = btn.dataset.key === (selectedKey || keyFor(new Date()));
+      btn.classList.toggle("active", isActive);
+      if(isActive){
+        btn.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
+      }
+    });
+    return;
+  }
+  nav.innerHTML = "";
+  const allKeys = Object.keys(DATA).sort();
+  allKeys.forEach(key=>{
+    const [y,m,d] = key.split("-").map(Number);
+    const dObj = new Date(y, m-1, d);
+    const btn = document.createElement("button");
+    btn.className = "day-btn";
+    btn.dataset.key = key;
+    if(key===keyFor(new Date())) btn.classList.add("today");
+    if(key===(selectedKey||keyFor(new Date()))) btn.classList.add("active");
+    btn.innerHTML = `<span>${DAY_NAMES[dObj.getDay()]}</span>${d}`;
+    btn.onclick = ()=>{selectedKey=key; render();};
+    nav.appendChild(btn);
+  });
+  nav.dataset.built = "1";
+  const activeBtn = nav.querySelector(".day-btn.active");
+  if(activeBtn) activeBtn.scrollIntoView({inline:"center", block:"nearest"});
+}
+
+function renderTable(key){
+  const table = document.getElementById("tideTable");
+  const day = DATA[key];
+  table.innerHTML = "";
+  day.tides.forEach((tide,i)=>{
+    const tr = document.createElement("tr");
+    tr.style.animationDelay = (i*70)+"ms";
+    const isPM = tide.type==="PM";
+    tr.innerHTML = `
+      <td class="tide-type ${isPM?'pm':'bm'}">${isPM?"▲":"▼"}</td>
+      <td class="tide-time">${tide.t.replace(":","h")}</td>
+      <td class="tide-label">${isPM?"Marée haute":"Marée basse"}</td>
+      <td class="tide-height">${tide.h.toFixed(1)} m</td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function heightAt(key, minutesOfDay){
+  const day = DATA[key];
+  const prevDayKey = (()=>{const d=new Date(key);d.setDate(d.getDate()-1);return keyFor(d);})();
+  const nextDayKey = (()=>{const d=new Date(key);d.setDate(d.getDate()+1);return keyFor(d);})();
+
+  let points = [];
+  if(DATA[prevDayKey]){
+    const last = DATA[prevDayKey].tides[DATA[prevDayKey].tides.length-1];
+    points.push({m: minutesOf(last.t)-1440, h:last.h});
+  }
+  day.tides.forEach(t=>points.push({m:minutesOf(t.t), h:t.h}));
+  if(DATA[nextDayKey]){
+    const first = DATA[nextDayKey].tides[0];
+    points.push({m: minutesOf(first.t)+1440, h:first.h});
+  }
+  points.sort((a,b)=>a.m-b.m);
+
+  for(let i=0;i<points.length-1;i++){
+    if(minutesOfDay>=points[i].m && minutesOfDay<=points[i+1].m){
+      const frac = (minutesOfDay-points[i].m)/(points[i+1].m-points[i].m);
+      const cos = (1-Math.cos(frac*Math.PI))/2;
+      return points[i].h + (points[i+1].h-points[i].h)*cos;
+    }
+  }
+  return points[0] ? points[0].h : 6;
+}
+
+const CURVE_W=500, CURVE_H=150, CURVE_PAD=10, N_STEPS=145; // 1440/10 + 1
+let curveEls = null;
+let curveState = null; // {hs, min, max, dotM} currently displayed
+let curveRAF = null;
+
+function xFor(m){ return (m/1440)*CURVE_W; }
+function easeInOutCubic(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+function pathFrom(hs, min, max){
+  const yFor = h => CURVE_H-CURVE_PAD - ( (h-min)/((max-min)||1) )*(CURVE_H-CURVE_PAD*2);
+  let d = "M "+xFor(0)+" "+yFor(hs[0]);
+  hs.forEach((h,i)=>{ d += " L "+xFor(i*10)+" "+yFor(h); });
+  const fillD = d + ` L ${CURVE_W} ${CURVE_H} L 0 ${CURVE_H} Z`;
+  return {d, fillD, yFor};
+}
+
+function initCurve(){
+  const svg = document.getElementById("curve");
+  svg.setAttribute("viewBox", `0 0 ${CURVE_W} ${CURVE_H}`);
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3FD0E0" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#3FD0E0" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <line class="grid-line" x1="0" y1="${CURVE_H/2}" x2="${CURVE_W}" y2="${CURVE_H/2}"/>
+    <path class="curve-fill" d=""/>
+    <path class="curve-path" d=""/>
+    <circle class="now-dot-halo" cx="0" cy="0" r="11"/>
+    <circle class="now-dot-ring" cx="0" cy="0" r="5"/>
+    <circle class="now-dot" cx="0" cy="0" r="5"/>
+    <text class="dot-tag" x="0" y="0" text-anchor="middle"></text>
+    <text class="tick" x="4" y="12">0h</text>
+    <text class="tick" x="${CURVE_W/2-10}" y="12">12h</text>
+    <text class="tick" x="${CURVE_W-24}" y="12">24h</text>
+  `;
+  curveEls = {
+    fill: svg.querySelector(".curve-fill"),
+    line: svg.querySelector(".curve-path"),
+    halo: svg.querySelector(".now-dot-halo"),
+    ring: svg.querySelector(".now-dot-ring"),
+    dot: svg.querySelector(".now-dot"),
+    tag: svg.querySelector(".dot-tag"),
+  };
+}
+
+function paintFrame(hs, min, max, dotM, showDot, tagText){
+  const {d, fillD, yFor} = pathFrom(hs, min, max);
+  curveEls.fill.setAttribute("d", fillD);
+  curveEls.line.setAttribute("d", d);
+
+  const idx = Math.min(hs.length-1, Math.max(0, Math.round(dotM/10)));
+  const dx = xFor(dotM), dy = yFor(hs[idx]);
+  [curveEls.halo, curveEls.ring, curveEls.dot].forEach(el=>{
+    el.setAttribute("cx", dx); el.setAttribute("cy", dy);
+  });
+  curveEls.tag.setAttribute("x", dx);
+  curveEls.tag.setAttribute("y", Math.max(11, dy-14));
+  curveEls.tag.textContent = tagText || "";
+
+  const op = showDot ? "1" : "0";
+  curveEls.halo.style.opacity = showDot ? ".16" : "0";
+  curveEls.ring.style.opacity = op;
+  curveEls.dot.style.opacity = op;
+  curveEls.tag.style.opacity = op;
+}
+
+function updateCurve(key, dotMinutes, tagText, animate){
+  if(!curveEls) initCurve();
+
+  let hs=[];
+  for(let m=0; m<=1440; m+=10) hs.push(heightAt(key,m));
+  const min = Math.min(...hs), max = Math.max(...hs);
+  const isToday = key===keyFor(new Date());
+
+  curveEls.ring.classList.toggle("pulsing", isToday);
+
+  if(!curveState || !animate){
+    curveState = {hs, min, max, dotM:dotMinutes};
+    paintFrame(hs, min, max, dotMinutes, true, tagText);
+    return;
+  }
+
+  if(curveRAF) cancelAnimationFrame(curveRAF);
+  const from = curveState;
+  const to = {hs, min, max, dotM:dotMinutes};
+  const duration = 700;
+  const t0 = performance.now();
+
+  function step(now){
+    const raw = Math.min(1, (now-t0)/duration);
+    const e = easeInOutCubic(raw);
+    const hsMix = from.hs.map((h,i)=> h + (to.hs[i]-h)*e);
+    const minMix = from.min + (to.min-from.min)*e;
+    const maxMix = from.max + (to.max-from.max)*e;
+    const dotMix = from.dotM + (to.dotM-from.dotM)*e;
+    paintFrame(hsMix, minMix, maxMix, dotMix, true, e>0.6 ? tagText : "");
+    if(raw<1){ curveRAF = requestAnimationFrame(step); }
+    else { curveState = to; curveRAF=null; }
+  }
+  curveRAF = requestAnimationFrame(step);
+}
+
+let lastRenderedKey = null;
+
+function render(){
+  const today = new Date();
+  const key = selectedKey || keyFor(today);
+  const day = DATA[key];
+  if(!day) return;
+
+  const dayChanged = lastRenderedKey !== null && lastRenderedKey !== key;
+
+  const [y,m,d] = key.split("-").map(Number);
+  const dispDate = new Date(y, m-1, d);
+  document.getElementById("dateLabel").textContent =
+    `${DAY_NAMES[dispDate.getDay()][0].toUpperCase()+DAY_NAMES[dispDate.getDay()].slice(1)} ${d} ${MONTH_NAMES[m-1]} ${y} · lever ${day.sunrise} / coucher ${day.sunset}`;
+
+  document.getElementById("coeffToday").textContent = day.coeff;
+  const marnage = Math.max(...day.tides.map(t=>t.h)) - Math.min(...day.tides.map(t=>t.h));
+  document.getElementById("marnageVal").textContent = marnage.toFixed(1)+" m";
+  document.getElementById("coeffBar").style.width = day.coeff+"%";
+
+  const isToday = key===keyFor(today);
+  // le point reste toujours calé sur l'heure réelle actuelle, même en regardant un autre jour
+  const nowMinutes = today.getHours()*60+today.getMinutes();
+  const nowH = heightAt(key, nowMinutes);
+
+  const stateEl = document.getElementById("stateLabel");
+  const nextEl = document.getElementById("nextTideLabel");
+
+  function paintText(){
+    if(isToday){
+      let next = day.tides.find(t=>minutesOf(t.t)>nowMinutes);
+      let nextKey = key;
+      if(!next){
+        const d2=new Date(dispDate); d2.setDate(d2.getDate()+1);
+        nextKey = keyFor(d2);
+        next = DATA[nextKey] ? DATA[nextKey].tides[0] : null;
+      }
+      let prevTides = day.tides.filter(t=>minutesOf(t.t)<=nowMinutes);
+      let rising;
+      if(prevTides.length===0){
+        const d0=new Date(dispDate); d0.setDate(d0.getDate()-1);
+        const prevKey=keyFor(d0);
+        const prevDay = DATA[prevKey];
+        const lastPrev = prevDay ? prevDay.tides[prevDay.tides.length-1] : null;
+        rising = lastPrev ? lastPrev.type==="BM" : true;
+      } else {
+        rising = prevTides[prevTides.length-1].type==="BM";
+      }
+      stateEl.textContent = rising ? "la mer monte" : "la mer descend";
+
+      if(next){
+        const diffMin = (nextKey!==key ? minutesOf(next.t)+1440 : minutesOf(next.t)) - nowMinutes;
+        const h = Math.floor(diffMin/60), mm = diffMin%60;
+        nextEl.innerHTML =
+          `${next.type==="PM"?"Marée haute":"Marée basse"} à ${next.t.replace(":","h")}
+           <small>dans ${h} h ${pad(mm)} min · ${next.h.toFixed(1)} m</small>`;
+      }
+    } else {
+      stateEl.textContent = "aperçu du jour";
+      nextEl.innerHTML =
+        `${day.tides.length} marées ce jour-là <small>niveau à cette heure : ${nowH.toFixed(1)} m · coeff. ${day.coeff}</small>`;
+    }
+  }
+
+  if(dayChanged){
+    stateEl.classList.add("swap");
+    nextEl.classList.add("swap");
+    setTimeout(()=>{
+      paintText();
+      stateEl.classList.remove("swap");
+      nextEl.classList.remove("swap");
+    }, 160);
+  } else {
+    paintText();
+  }
+
+  const dotTag = isToday ? "maintenant" : "";
+  updateCurve(key, nowMinutes, dotTag, dayChanged);
+
+  const tableCard = document.querySelector(".table-card");
+  if(dayChanged){
+    tableCard.classList.add("leaving");
+    setTimeout(()=>{
+      renderTable(key);
+      tableCard.classList.remove("leaving");
+    }, 150);
+  } else {
+    renderTable(key);
+  }
+
+  buildDayNav(dispDate);
+  lastRenderedKey = key;
+}
+
+render();
+setInterval(()=>{ if(!selectedKey || selectedKey===keyFor(new Date())) render(); }, 60000);
+</script>
+</body>
+</html>
