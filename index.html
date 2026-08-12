@@ -233,6 +233,54 @@
     padding:18px 20px;
   }
   footer a{color:var(--cyan);}
+
+  /* ---------- Onglets Marées / Vagues ---------- */
+  .tabs{
+    margin-top:20px; display:flex; gap:4px; padding:5px; border-radius:20px;
+    opacity:0; transform:translateY(14px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.05s;
+  }
+  .tab-btn{
+    flex:1; border:none; background:transparent; color:var(--mist);
+    font-size:14px; font-weight:700; padding:11px 10px; border-radius:15px;
+    cursor:pointer; transition:all .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .tab-btn.active{
+    background:linear-gradient(135deg, rgba(63,208,224,.28), rgba(255,138,92,.18));
+    color:var(--ink);
+    box-shadow:0 4px 14px -6px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.16) inset;
+  }
+
+  /* ---------- Vagues ---------- */
+  .wave-bars{
+    display:flex; align-items:flex-end; gap:3px; height:110px; margin-top:18px;
+    padding:0 2px;
+  }
+  .wave-bar{
+    flex:1; border-radius:5px 5px 2px 2px; min-height:4px;
+    position:relative; transition:height .5s cubic-bezier(.2,.8,.2,1), opacity .3s;
+    opacity:.55;
+  }
+  .wave-bar.now{ opacity:1; box-shadow:0 0 14px rgba(255,255,255,.35); }
+  .wave-bar.now::after{
+    content:""; position:absolute; left:50%; top:-9px; width:6px;height:6px;
+    background:var(--coral); border-radius:50%; transform:translateX(-50%);
+    box-shadow:0 0 8px var(--coral);
+  }
+
+  .legend-card{
+    margin-top:18px; padding:16px 18px; display:flex; flex-direction:column; gap:9px;
+    opacity:0; transform:translateY(18px);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.28s;
+  }
+  .legend-row{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--mist);}
+  .legend-swatch{width:12px;height:12px;border-radius:4px;flex:0 0 auto;}
+  .legend-row b{color:var(--ink); font-weight:700; min-width:64px;}
+
+  .wave-pill{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 11px;
+    border-radius:20px; font-size:12.5px; font-weight:700;
+  }
 </style>
 </head>
 <body>
@@ -245,35 +293,65 @@
 
   <header>
     <p class="eyebrow"><span class="dot"></span>Côte d'Émeraude · Ille-et-Vilaine</p>
-    <h1>Marées à <span class="accent">Saint-Briac</span></h1>
+    <h1><span id="pageTitle">Marées</span> à <span class="accent">Longchamp</span></h1>
     <p class="subtitle" id="dateLabel">—</p>
   </header>
 
-  <div class="now-card glass">
-    <div class="state-row">
-      <span class="state" id="stateLabel">—</span>
+  <div class="tabs glass" id="tabs">
+    <button class="tab-btn active" data-tab="tides">🌊 Marées</button>
+    <button class="tab-btn" data-tab="waves">〰️ Vagues</button>
+  </div>
+
+  <!-- ===== MARÉES ===== -->
+  <div id="tidesPanel">
+    <div class="now-card glass">
+      <div class="state-row">
+        <span class="state" id="stateLabel">—</span>
+      </div>
+      <div class="next-tide" id="nextTideLabel">—
+        <small id="nextTideSub">&nbsp;</small>
+      </div>
+      <svg id="curve" viewBox="0 0 500 150" preserveAspectRatio="none"></svg>
     </div>
-    <div class="next-tide" id="nextTideLabel">—
-      <small id="nextTideSub">&nbsp;</small>
+
+    <div class="table-card glass">
+      <table class="tide-table" id="tideTable"></table>
     </div>
-    <svg id="curve" viewBox="0 0 500 150" preserveAspectRatio="none"></svg>
+
+    <div class="coeff-strip glass">
+      <span>marnage</span>
+      <div class="coeff-bar"><div class="coeff-fill" id="coeffBar"></div></div>
+      <span class="marnage-val" id="marnageVal">—</span>
+    </div>
+  </div>
+
+  <!-- ===== VAGUES ===== -->
+  <div id="wavesPanel" style="display:none;">
+    <div class="now-card glass">
+      <div class="state-row">
+        <span class="state" id="waveStatusLabel">chargement…</span>
+      </div>
+      <div class="next-tide" id="waveNowLabel">—
+        <small id="waveNowSub">&nbsp;</small>
+      </div>
+      <div class="wave-bars" id="waveBars"></div>
+    </div>
+
+    <div class="legend-card glass" id="waveLegend"></div>
+
+    <div class="table-card glass">
+      <table class="tide-table" id="waveTable"></table>
+    </div>
   </div>
 
   <div class="section-label">Cette semaine</div>
   <div class="day-nav" id="dayNav"></div>
 
-  <div class="table-card glass">
-    <table class="tide-table" id="tideTable"></table>
-  </div>
-
-  <div class="coeff-strip glass">
-    <span>marnage</span>
-    <div class="coeff-bar"><div class="coeff-fill" id="coeffBar"></div></div>
-    <span class="marnage-val" id="marnageVal">—</span>
-  </div>
-
-  <footer>
+  <footer id="tidesFooter">
     Données de prédiction — port de référence Saint-Briac-sur-Mer, août 2026 (source SHOM, via mareespeche.com). À titre indicatif : pour la navigation, la plongée ou toute sortie en mer, référez-vous aux tables de marées officielles du SHOM. Le marnage à Saint-Briac est parmi les plus forts d'Europe (jusqu'à 12 m) — restez vigilant sur l'estran, la mer y monte vite.
+  </footer>
+  <footer id="wavesFooter" style="display:none;">
+    Prévisions de houle — plage de Longchamp (Saint-Briac / Saint-Lunaire), modèle météo-marin (Open-Meteo / DWD). Estimation indicative à échelle régionale (~5 km) : la hauteur réelle au bord peut varier selon les fonds et abris locaux. Ne remplace pas l'avis du poste de secours ni le drapeau de baignade affiché sur place.
   </footer>
 
 </div>
@@ -583,7 +661,7 @@ function render(){
   const dotTag = isToday ? "maintenant" : "";
   updateCurve(key, nowMinutes, dotTag, dayChanged);
 
-  const tableCard = document.querySelector(".table-card");
+  const tableCard = document.querySelector("#tidesPanel .table-card");
   if(dayChanged){
     tableCard.classList.add("leaving");
     setTimeout(()=>{
@@ -594,12 +672,149 @@ function render(){
     renderTable(key);
   }
 
+  renderWaves(key, nowMinutes, dayChanged);
+
   buildDayNav(dispDate);
   lastRenderedKey = key;
 }
 
+// ---------- Vagues (plage de Longchamp — Open-Meteo Marine, gratuit sans clé) ----------
+const WAVE_LAT = 48.6379, WAVE_LON = -2.1183; // plage de Longchamp
+const WAVE_CACHE_KEY = "sbm_wave_cache_v1";
+const WAVE_CACHE_MAX_AGE_MS = 3*60*60*1000; // 3h, les modèles se rafraîchissent 2x/jour
+
+const WAVE_LEVELS = [
+  {max:0.3, label:"Calme",        emoji:"🌊",   color:"#3FD0E0"},
+  {max:0.6, label:"Légère",       emoji:"🌊🌊",  color:"#7FE0B8"},
+  {max:1.0, label:"Modérée",      emoji:"🌊🌊",  color:"#F4C95D"},
+  {max:1.5, label:"Agitée",       emoji:"🌊🌊🌊", color:"#FF8A5C"},
+  {max:2.5, label:"Forte",        emoji:"🌊🌊🌊", color:"#FF5C5C"},
+  {max:Infinity, label:"Très forte", emoji:"🌊🌊🌊🌊", color:"#C81E4B"}
+];
+function waveLevel(h){ return WAVE_LEVELS.find(l=> h < l.max) || WAVE_LEVELS[WAVE_LEVELS.length-1]; }
+
+let WAVE_DATA = null; // { "YYYY-MM-DD": [{hh:0..23, h, period, dir}, ...] }
+
+async function fetchWaves(){
+  const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${WAVE_LAT}&longitude=${WAVE_LON}&hourly=wave_height,wave_period,wave_direction&timezone=Europe%2FParis&forecast_days=7&cell_selection=sea`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if(!res.ok || !json.hourly) throw new Error("réponse vagues invalide");
+  const out = {};
+  json.hourly.time.forEach((iso,i)=>{
+    const [datePart, timePart] = iso.split("T");
+    if(!out[datePart]) out[datePart] = [];
+    out[datePart].push({
+      hh: parseInt(timePart.slice(0,2),10),
+      h: json.hourly.wave_height[i],
+      period: json.hourly.wave_period ? json.hourly.wave_period[i] : null,
+      dir: json.hourly.wave_direction ? json.hourly.wave_direction[i] : null
+    });
+  });
+  return out;
+}
+
+async function loadWaveData(){
+  try{
+    const cachedRaw = localStorage.getItem(WAVE_CACHE_KEY);
+    if(cachedRaw){
+      const cached = JSON.parse(cachedRaw);
+      if((Date.now()-cached.fetchedAt) < WAVE_CACHE_MAX_AGE_MS) return cached.data;
+    }
+  }catch(e){}
+  const data = await fetchWaves();
+  try{ localStorage.setItem(WAVE_CACHE_KEY, JSON.stringify({fetchedAt:Date.now(), data})); }catch(e){}
+  return data;
+}
+
+function renderWaves(key, nowMinutes, animate){
+  const bars = document.getElementById("waveBars");
+  const table = document.getElementById("waveTable");
+  const nowLabel = document.getElementById("waveNowLabel");
+  const statusLabel = document.getElementById("waveStatusLabel");
+  if(!WAVE_DATA){
+    statusLabel.textContent = "chargement…";
+    return;
+  }
+  const day = WAVE_DATA[key];
+  if(!day){
+    statusLabel.textContent = "indisponible pour ce jour";
+    bars.innerHTML = ""; table.innerHTML = "";
+    nowLabel.innerHTML = "—";
+    return;
+  }
+
+  const nowHour = Math.round(nowMinutes/60) % 24;
+  const isToday = key===keyFor(new Date());
+
+  // barres (24h)
+  const maxH = Math.max(1.2, ...day.map(p=>p.h));
+  bars.innerHTML = "";
+  day.forEach(p=>{
+    const lvl = waveLevel(p.h);
+    const div = document.createElement("div");
+    div.className = "wave-bar" + (isToday && p.hh===nowHour ? " now":"");
+    div.style.height = Math.max(6, (p.h/maxH)*100)+"%";
+    div.style.background = lvl.color;
+    bars.appendChild(div);
+  });
+
+  // état actuel
+  const current = isToday ? (day.find(p=>p.hh===nowHour) || day[0]) : day[Math.round(day.length/2)];
+  const lvl = waveLevel(current.h);
+  statusLabel.textContent = isToday ? "en ce moment" : "aperçu du jour";
+  nowLabel.innerHTML =
+    `${current.h.toFixed(1)} m
+     <small><span class="wave-pill" style="background:${lvl.color}22;color:${lvl.color}">${lvl.emoji} ${lvl.label}</span>
+     ${current.period ? ` · une vague toutes les ${Math.round(current.period)} s` : ""}</small>`;
+
+  // table toutes les 3h
+  table.innerHTML = "";
+  day.filter(p=>p.hh % 3 === 0).forEach((p,i)=>{
+    const l = waveLevel(p.h);
+    const tr = document.createElement("tr");
+    tr.style.animationDelay = (i*60)+"ms";
+    tr.innerHTML = `
+      <td class="tide-type" style="color:${l.color}">🌊</td>
+      <td class="tide-time">${pad(p.hh)}h</td>
+      <td class="tide-label"><span class="wave-pill" style="background:${l.color}22;color:${l.color}">${l.label}</span></td>
+      <td class="tide-height">${p.h.toFixed(1)} m</td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function buildWaveLegend(){
+  const el = document.getElementById("waveLegend");
+  el.innerHTML = WAVE_LEVELS.map(l=>
+    `<div class="legend-row"><span class="legend-swatch" style="background:${l.color}"></span><b>${l.label}</b> ${l.max===Infinity?"plus de 2,5 m":"jusqu'à "+l.max.toFixed(1).replace(".",",")+" m"}</div>`
+  ).join("");
+}
+
+// ---------- Onglets ----------
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.getElementById("tidesPanel").style.display = tab==="tides" ? "" : "none";
+    document.getElementById("wavesPanel").style.display = tab==="waves" ? "" : "none";
+    document.getElementById("tidesFooter").style.display = tab==="tides" ? "" : "none";
+    document.getElementById("wavesFooter").style.display = tab==="waves" ? "" : "none";
+    document.getElementById("pageTitle").textContent = tab==="tides" ? "Marées" : "Vagues";
+  });
+});
+
+buildWaveLegend();
 render();
 setInterval(()=>{ if(!selectedKey || selectedKey===keyFor(new Date())) render(); }, 60000);
+
+loadWaveData().then(data=>{
+  WAVE_DATA = data;
+  render();
+}).catch(()=>{
+  document.getElementById("waveStatusLabel").textContent = "hors-ligne · vagues indisponibles";
+});
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
